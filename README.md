@@ -76,19 +76,12 @@ Matched rules: [test_malware]
 ## 🧩 Folder Structure
 antiviruscn/
 │
-
 ├─ gui.py                  # Main Python GUI
-
 ├─ rules/                  # Folder for YARA rules
-
 │   ├─ sample_text.yar
-
 │   ├─ sample_pe.yar
-
 │   └─ sample_webshell.yar
-
 ├─ testfolder/             # Folder to test RTM
-
 └─ test_yara.py            # Command-line test script
 
 ## 📂 Adding Your Own YARA Rules
