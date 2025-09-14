@@ -74,6 +74,7 @@ Matched rules: [test_malware]
 ```
 
 ## 🧩 Folder Structure
+```text
 antiviruscn/
 │
 ├─ gui.py                  # Main Python GUI
@@ -83,6 +84,7 @@ antiviruscn/
 │   └─ sample_webshell.yar
 ├─ testfolder/             # Folder to test RTM
 └─ test_yara.py            # Command-line test script
+```
 
 ## 📂 Adding Your Own YARA Rules
 1. reate a .yar file in the rules/ folder.
