@@ -1,0 +1,5 @@
+[+] Rule matched: No match
+[RTM] File modified: D:/myantivirus/testfolder\test2.txt
+[RTM] Rule matched: No match
+[RTM] File modified: D:/myantivirus/testfolder\test2.txt
+[RTM] Rule matched: No match

@@ -7,49 +7,31 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import yara
 
-# ---------------- Logging Helper ----------------
-LOG_FILE = "scan_log.txt"
-
-def log_message(text_widget, message):
-    text_widget.insert(END, message + "\n")
-    text_widget.see(END)
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(message + "\n")
-
-# ---------------- YARA Rules Loader ----------------
-def load_yara_rules():
-    rules_dir = os.path.join(os.getcwd(), "rules")
-    yar_files = [f for f in os.listdir(rules_dir) if f.endswith(".yar") or f.endswith(".yara")]
+# ---------------- Load YARA Rules ----------------
+def load_rules():
+    rules_folder = os.path.join(os.path.dirname(__file__), "rules")
+    rule_files = [os.path.join(rules_folder, f) for f in os.listdir(rules_folder) if f.endswith(".yar")]
     compiled_rules = []
-    for f in yar_files:
+    for f in rule_files:
         try:
-            path = os.path.join(rules_dir, f)
-            rule = yara.compile(filepath=path)
-            compiled_rules.append(rule)
-            print(f"Loaded YARA rule: {f}")
-        except Exception as e:
+            compiled_rules.append(yara.compile(filepath=f))
+        except yara.Error as e:
             print(f"Error compiling {f}: {e}")
-    if not compiled_rules:
-        print("No valid YARA rules loaded!")
-        return None
     return compiled_rules
 
-RULES = load_yara_rules()
+YARA_RULES = load_rules()
 
 # ---------------- Scan Engine ----------------
 def scan_file(file_path):
-    results = []
-    if not RULES:
-        return ["No YARA rules loaded"]
+    matches = []
     try:
-        for rule in RULES:
-            matches = rule.match(file_path)
-            results.extend([m.rule for m in matches])
+        for rule in YARA_RULES:
+            result = rule.match(file_path)
+            if result:
+                matches.extend([r.rule for r in result])
     except Exception as e:
-        results.append(f"Error scanning {file_path}: {e}")
-    if not results:
-        results.append("No match")
-    return results
+        matches.append(f"Error scanning {file_path}: {e}")
+    return matches
 
 # ---------------- Real-Time Monitoring ----------------
 class RTMHandler(FileSystemEventHandler):
@@ -64,42 +46,37 @@ class RTMHandler(FileSystemEventHandler):
             for m in matches:
                 self.log_func(f"[RTM] Rule matched: {m}")
 
-    def on_modified(self, event):
-        if not event.is_directory:
-            self.log_func(f"[RTM] File modified: {event.src_path}")
-            matches = scan_file(event.src_path)
-            for m in matches:
-                self.log_func(f"[RTM] Rule matched: {m}")
-
-def start_rtm(path, log_func):
+def start_rtm(path, log_func, stop_flag):
     handler = RTMHandler(log_func)
     observer = Observer()
     observer.schedule(handler, path=path, recursive=True)
     observer.start()
     try:
-        while True:
+        while not stop_flag["stop"]:
             time.sleep(1)
     except KeyboardInterrupt:
-        observer.stop()
+        pass
+    observer.stop()
     observer.join()
 
 # ---------------- GUI ----------------
 class AntivirusGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Python Antivirus Demo (YARA)")
+        self.root.title("Python Antivirus Demo with YARA")
         self.root.geometry("1000x700")
         self.file_path = ""
         self.rtm_thread = None
-        self.rtm_active = False
+        self.rtm_stop_flag = {"stop": False}
         self.setup_ui()
 
     def setup_ui(self):
-        Label(self.root, text="Python Antivirus Demo (YARA)", font=("Helvetica", 24, "bold")).pack(pady=10)
+        Label(self.root, text="Python Antivirus Demo with YARA", font=("Helvetica", 24, "bold")).pack(pady=10)
 
         # File selection
         frame = Frame(self.root)
         frame.pack(pady=10)
+
         Button(frame, text="Select File", command=self.open_file).grid(row=0, column=0, padx=5)
         Button(frame, text="Select Folder", command=self.open_folder).grid(row=0, column=1, padx=5)
         Button(frame, text="Scan", command=self.scan).grid(row=0, column=2, padx=5)
@@ -109,12 +86,12 @@ class AntivirusGUI:
 
         # Scan output
         Label(self.root, text="Scan Output", font=("Helvetica", 16, "bold")).pack(pady=5)
-        self.output_text = Text(self.root, width=120, height=15, bg="#262626", fg="white")
+        self.output_text = Text(self.root, width=120, height=10, bg="#262626", fg="white")
         self.output_text.pack(padx=10, pady=5)
 
         # RTM
         Label(self.root, text="Real-Time Monitoring", font=("Helvetica", 16, "bold")).pack(pady=10)
-        self.rtm_text = Text(self.root, width=120, height=15, bg="#262626", fg="#00ff00")
+        self.rtm_text = Text(self.root, width=120, height=10, bg="#262626", fg="#00ff00")
         self.rtm_text.pack(padx=10, pady=5)
         self.switch_var = IntVar()
         self.rtm_button = Checkbutton(self.root, text="RTM OFF", variable=self.switch_var, indicatoron=False,
@@ -133,39 +110,40 @@ class AntivirusGUI:
     # ---------------- Scan ----------------
     def scan(self):
         if not self.file_path:
-            log_message(self.output_text, "[!] No file or folder selected.")
             return
         self.output_text.delete(1.0, END)
-        try:
-            if os.path.isfile(self.file_path):
-                matches = scan_file(self.file_path)
-                for m in matches:
-                    log_message(self.output_text, f"[+] Rule matched: {m}")
-            else:
-                for root_dir, _, files in os.walk(self.file_path):
-                    for f in files:
-                        full_path = os.path.join(root_dir, f)
-                        matches = scan_file(full_path)
-                        for m in matches:
-                            log_message(self.output_text, f"[+] {f} matched: {m}")
-        except Exception as e:
-            log_message(self.output_text, f"[!] Error scanning: {e}")
+        if os.path.isfile(self.file_path):
+            matches = scan_file(self.file_path)
+            for m in matches:
+                self.output_text.insert(END, f"[+] Rule matched: {m}\n")
+        else:
+            for root_dir, _, files in os.walk(self.file_path):
+                for f in files:
+                    full_path = os.path.join(root_dir, f)
+                    matches = scan_file(full_path)
+                    for m in matches:
+                        self.output_text.insert(END, f"[+] {f} matched: {m}\n")
 
     # ---------------- RTM ----------------
     def toggle_rtm(self):
         if self.switch_var.get():
             if not self.file_path or not os.path.isdir(self.file_path):
                 self.switch_var.set(0)
-                log_message(self.rtm_text, "[!] Please select a folder to monitor.")
                 return
-            self.rtm_active = True
+            self.rtm_stop_flag["stop"] = False
             self.rtm_button.config(text="RTM ON")
-            self.rtm_thread = threading.Thread(target=start_rtm, args=(self.file_path, lambda msg: log_message(self.rtm_text, msg)), daemon=True)
+            self.rtm_thread = threading.Thread(target=start_rtm,
+                                               args=(self.file_path, self.log_rtm, self.rtm_stop_flag),
+                                               daemon=True)
             self.rtm_thread.start()
         else:
-            self.rtm_active = False
+            self.rtm_stop_flag["stop"] = True
             self.rtm_button.config(text="RTM OFF")
-            log_message(self.rtm_text, "\n[RTM Stopped]\n")
+            self.rtm_text.insert(END, "\n[RTM Stopped]\n")
+
+    def log_rtm(self, text):
+        self.rtm_text.insert(END, text + "\n")
+        self.rtm_text.see(END)
 
 # ---------------- Main ----------------
 if __name__ == "__main__":
