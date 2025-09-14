@@ -36,3 +36,18 @@ You can also monitor folders in **real-time** to catch threats immediately.
 ```bash
 git clone https://github.com/yourusername/python-antivirus-demo.git
 cd python-antivirus-demo
+```
+**Create a virtual environment (optional but recommended):**
+```bash
+python -m venv venv
+source venv/bin/activate    # Linux / macOS
+venv\Scripts\activate       # Windows
+```
+**Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+Requirements include: yara-python, watchdog, tkinter (built-in with Python)
+
+Add YARA rules: Place .yar or .yara files inside the rules/ folder.
+You can download open-source rules from YARA-Rules GitHub
