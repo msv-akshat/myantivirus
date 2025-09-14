@@ -9,7 +9,7 @@ A fun and educational Python project to build your own antivirus using YARA rule
 
 ## 🎯 Project Overview
 
-**Python Antivirus Demo (YARA)** is a lightweight antivirus engine built in Python.  
+**Python Antivirus (YARA)** is a lightweight antivirus engine built in Python.  
 It uses **YARA rules** to detect malware, ransomware, RATs, and suspicious files.  
 You can also monitor folders in **real-time** to catch threats immediately.
 
