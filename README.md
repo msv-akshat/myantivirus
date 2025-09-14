@@ -1,8 +1,9 @@
-# 🛡️ Python Antivirus Demo (YARA)
+# 🛡️ Python Antivirus (YARA)
 
 A fun and educational Python project to build your own antivirus using YARA rules!
 
-![Optional GUI Screenshot](screenshot.png)
+<img width="1919" height="1020" alt="image" src="https://github.com/user-attachments/assets/3a569768-27c2-4848-9875-2b06c6159787" />
+
 
 ---
 
