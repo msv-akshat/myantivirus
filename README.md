@@ -121,16 +121,3 @@ Report bugs or issues on GitHub.
 ## 📄 License
 This project is licensed under MIT License.
 YARA rules may have their own licenses (check their headers).
-```pgsql
-
-✅ **Key tips:**  
-- Save this file as `README.md` (not `.txt`).  
-- Paste exactly as-is into your repo.  
-- GitHub will automatically render the headings, code blocks, and lists correctly.  
-
----
-
-If you want, I can **also make it extra flashy with colored badges, GitHub stats, and bash highlights** so your project really “pops” visually.  
-
-Do you want me to do that version too?
-```
